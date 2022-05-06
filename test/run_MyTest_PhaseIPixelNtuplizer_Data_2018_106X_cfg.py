@@ -304,13 +304,14 @@ if opt.loadTagsFromPrep != '':
     }
     for cond in str(opt.loadTagsFromPrep).split(','):
         print("Loading condition: ", cond)
-		if opt.noMagField and "Template" in cond:
+
+        if (opt.noMagField in cond) and ("Template" in cond):
 			process.GlobalTag.toGet.append(cms.PSet(
 				connect = cms.string('frontier://FrontierPrep/CMS_CONDITIONS'),
 				record = cms.string(Rcds[cond.split("_")[0]]),
 				tag = cms.string(cond),
 				label = cms.untracked.string('0T')))
-		else:
+        else:
 			process.GlobalTag.toGet.append(cms.PSet(
 				connect = cms.string('frontier://FrontierPrep/CMS_CONDITIONS'),
 				record = cms.string(Rcds[cond.split("_")[0]]),
