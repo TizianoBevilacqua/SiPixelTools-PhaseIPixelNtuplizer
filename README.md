@@ -9,7 +9,7 @@ cmsrel CMSSW_10_6_8_patch1
 cd CMSSW_10_6_8_patch1/src
 cmsenv
 # git cms-init #optional, use this, if you want to check out CMSSW packages later
-git clone https://github.com/CMSTrackerDPG/SiPixelTools-PhaseIPixelNtuplizer SiPixelTools/PhaseIPixelNtuplizer
+git clone https://github.com/TizianoBevilacqua/SiPixelTools-PhaseIPixelNtuplizer SiPixelTools/PhaseIPixelNtuplizer
 cd SiPixelTools/PhaseIPixelNtuplizer
 sed -i "s;CMSSW_VERSION 113;CMSSW_VERSION 106;" plugins/PhaseIPixelNtuplizer.h
 sed -i "s;CMSSW_VERSION 113;CMSSW_VERSION 106;" interface/PixelHitAssociator.h
