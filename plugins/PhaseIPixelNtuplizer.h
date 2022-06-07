@@ -4,7 +4,7 @@
 #define ADD_SIM_INFO 0
 #define ADD_NEW_MUON_SELECTORS 1 // Works in 9_4_X, 10_6_X or later
 
-#define CMSSW_VERSION 113
+#define CMSSW_VERSION 123
 
 /*
 #define ADD_SIM_INFO 1
@@ -21,7 +21,7 @@
 
 // CMSSW code
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/EDAnalyzer.h"
+#include "FWCore/Framework/interface/one/EDAnalyzer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/LuminosityBlock.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
@@ -122,8 +122,7 @@
 #define EDM_ML_LOGDEBUG
 #define ML_DEBUG
 
-class PhaseIPixelNtuplizer : public edm::EDAnalyzer
-{
+class PhaseIPixelNtuplizer : public edm::one::EDAnalyzer<>{
   using LumisectionCount = int;
     static constexpr int                  ZEROBIAS_TRIGGER_BIT           = 0;
     static constexpr int                  ZEROBIAS_BITMASK               = 1 << ZEROBIAS_TRIGGER_BIT;
@@ -152,8 +151,10 @@ public:
   virtual void beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
   virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&);
 
+
 private:
   edm::ParameterSet iConfig_;
+
   std::string ntupleOutputFilename_;
 
   // States
@@ -186,6 +187,16 @@ private:
   std::vector<std::string>               triggerNames_;
   edm::InputTag                          triggerTag_;
   std::map<uint32_t, int>                federrors_;
+
+
+  edm::ESGetToken<TransientTrackBuilder, TransientTrackRecord> trackBuilderToken_;
+  edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> trackerTopologyToken_;
+  edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> trackerGeometryToken_;
+  edm::ESGetToken<Propagator, TrackingComponentsRecord> propagatorToken_;
+  edm::ESGetToken<MeasurementTracker, CkfComponentsRecord> measurementTrackerToken_;
+  edm::ESGetToken<Chi2MeasurementEstimatorBase, TrackingComponentsRecord> chi2MeasurementEstimatorToken_;
+  edm::ESGetToken<PixelClusterParameterEstimator, TkPixelCPERecord> pixelClusterParameterEstimatorToken_;
+  edm::ESGetToken<SiPixelFedCablingMap, SiPixelFedCablingMapRcd> cablingMapToken_;
   // Trees
   TTree* eventTree_;
   TTree* lumiTree_;

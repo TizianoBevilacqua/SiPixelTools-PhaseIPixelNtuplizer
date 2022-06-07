@@ -1,6 +1,10 @@
 #include "PhaseIPixelNtuplizer.h"
 #include "TVector.h"
 
+using namespace std;
+using namespace edm;
+using namespace reco;
+
 constexpr int                  PhaseIPixelNtuplizer::ZEROBIAS_TRIGGER_BIT;
 constexpr int                  PhaseIPixelNtuplizer::ZEROBIAS_BITMASK;
 constexpr int                  PhaseIPixelNtuplizer::VERTEX_NUMTRACK_CUT_VAL;
@@ -35,7 +39,16 @@ PhaseIPixelNtuplizer::PhaseIPixelNtuplizer(edm::ParameterSet const& iConfig) :
   keepAllTrackerMuons_(iConfig.getUntrackedParameter<bool>("keepAllTrackerMuons", true)),
   npixFromDigiCollection_(iConfig.getUntrackedParameter<bool>("npixFromDigiCollection", false)),
   minVertexSize_(15),
-  efficiencyCalculationFrequency_(iConfig.getUntrackedParameter<int>("efficiencyCalculationFrequency_", 1))
+  efficiencyCalculationFrequency_(iConfig.getUntrackedParameter<int>("efficiencyCalculationFrequency_", 1)),
+  // added by me 
+  trackBuilderToken_(esConsumes(edm::ESInputTag("", "TransientTrackBuilder"))),
+  trackerTopologyToken_(esConsumes()),
+  trackerGeometryToken_(esConsumes()),
+  propagatorToken_(esConsumes(edm::ESInputTag("", "PropagatorWithMaterial"))),
+  measurementTrackerToken_(esConsumes()),
+  chi2MeasurementEstimatorToken_(esConsumes(edm::ESInputTag("", "Chi2"))),
+  pixelClusterParameterEstimatorToken_(esConsumes(edm::ESInputTag("", "PixelCPEGeneric"))),
+  cablingMapToken_(esConsumes())
 {
 
   if(isCosmicTracking_) 
@@ -79,6 +92,7 @@ PhaseIPixelNtuplizer::PhaseIPixelNtuplizer(edm::ParameterSet const& iConfig) :
     //	conditionsInRunBlockToken_ = mayConsume<edm::ConditionsInRunBlock, edm::InRun>(edm::InputTag("conditionsInEdm"));
     
     simTrackToken_ = consumes<edm::SimTrackContainer>(edm::InputTag("g4SimHits"));
+
   }
 #endif
 
@@ -410,28 +424,33 @@ void PhaseIPixelNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSet
 
   // track builder for IPTools methods
   edm::ESHandle<TransientTrackBuilder> trackBuilderHandle;
-  iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", trackBuilderHandle);
+  trackBuilderHandle = iSetup.getHandle(trackBuilderToken_); 
+  ////iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder", trackBuilderHandle); 
 
   // TrackerTopology for module informations
   edm::ESHandle<TrackerTopology> trackerTopologyHandle;
-  iSetup.get<TrackerTopologyRcd>().get(trackerTopologyHandle);
+  trackerTopologyHandle = iSetup.getHandle(trackerTopologyToken_);
+  ////iSetup.get<TrackerTopologyRcd>().get(trackerTopologyHandle);
   trackerTopology_ = trackerTopologyHandle.product();
 
   // TrackerGeometry for module informations
   edm::ESHandle<TrackerGeometry> trackerGeometryHandle;
-  iSetup.get<TrackerDigiGeometryRecord>().get(trackerGeometryHandle);
+  trackerGeometryHandle = iSetup.getHandle(trackerGeometryToken_);
+  ////iSetup.get<TrackerDigiGeometryRecord>().get(trackerGeometryHandle);
   trackerGeometry_ = trackerGeometryHandle.product();
 
   // Tracker propagator for propagating tracks to other layers
   edm::ESHandle<Propagator> propagatorHandle;
-  iSetup.get<TrackingComponentsRecord>().get("PropagatorWithMaterial", propagatorHandle);
+  propagatorHandle = iSetup.getHandle(propagatorToken_);
+  ////iSetup.get<TrackingComponentsRecord>().get("PropagatorWithMaterial", propagatorHandle);  
   std::unique_ptr<Propagator> propagatorUniquePtr(propagatorHandle.product() -> clone());
   trackerPropagator_ = propagatorUniquePtr.get();
   const_cast<Propagator*>(trackerPropagator_) -> setPropagationDirection(oppositeToMomentum);
 
   // Measurement Tracker Handle
   edm::ESHandle<MeasurementTracker> measurementTrackerHandle;
-  iSetup.get<CkfComponentsRecord>().get(measurementTrackerHandle);
+  measurementTrackerHandle = iSetup.getHandle(measurementTrackerToken_);
+  ////iSetup.get<CkfComponentsRecord>().get(measurementTrackerHandle);
   measurementTracker_ = measurementTrackerHandle.product();
 
   // Measurement Tracker event
@@ -441,12 +460,14 @@ void PhaseIPixelNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSet
 
   // Measurement estimator
   edm::ESHandle<Chi2MeasurementEstimatorBase> chi2MeasurementEstimatorHandle;
-  iSetup.get<TrackingComponentsRecord>().get("Chi2", chi2MeasurementEstimatorHandle);
+  chi2MeasurementEstimatorHandle = iSetup.getHandle(chi2MeasurementEstimatorToken_);
+  //iSetup.get<TrackingComponentsRecord>().get("Chi2", chi2MeasurementEstimatorHandle);
   chi2MeasurementEstimator_ = chi2MeasurementEstimatorHandle.product();
 
   // Pixel Parameter estimator
   edm::ESHandle<PixelClusterParameterEstimator> pixelClusterParameterEstimatorHandle;
-  iSetup.get<TkPixelCPERecord>().get("PixelCPEGeneric", pixelClusterParameterEstimatorHandle);
+  pixelClusterParameterEstimatorHandle = iSetup.getHandle(pixelClusterParameterEstimatorToken_);
+  ////iSetup.get<TkPixelCPERecord>().get("PixelCPEGeneric", pixelClusterParameterEstimatorHandle); 
   pixelClusterParameterEstimator_ = pixelClusterParameterEstimatorHandle.product();
 
   // Track distance to muons
@@ -461,7 +482,8 @@ void PhaseIPixelNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSet
 #if CMSSW_VERSION > 110
   // Get CablingMap (used for ROC number)
   edm::ESHandle<SiPixelFedCablingMap> cablingMapHandle;
-  iSetup.get<SiPixelFedCablingMapRcd>().get(cablingMapHandle);
+  cablingMapHandle = iSetup.getHandle(cablingMapToken_);
+  ////iSetup.get<SiPixelFedCablingMapRcd>().get(cablingMapHandle);
 
   // Initialize the object used to calculate module geometric informations
   coord_.init(trackerTopology_, trackerGeometry_, cablingMapHandle.product());

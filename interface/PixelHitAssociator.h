@@ -16,7 +16,7 @@
  ************************************************************/
 
 #ifndef CMSSW_VERSION
-#define CMSSW_VERSION 113
+#define CMSSW_VERSION 123
 #endif
 
 //#include <vector>
